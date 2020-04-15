@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
+#include <map>
 using namespace std;
 
 class http_conn //http 连接类
@@ -49,6 +50,7 @@ public:
 
 public:
     void init(int socketfd, const sockaddr_in &addr); //初始化套接字
+    void init();                                      //实现具体各个参数值的初始化
     void close_conn();                                //关闭连接
     void process();                                   //处理请求
     bool read();                                      //一次性调用recv读取所有数据，读取浏览器发来的全部数据，读到读缓冲区,返回调用是否称成功的信息
@@ -61,6 +63,11 @@ public:
 private:
     HTTP_CODE process_read();          //从读缓冲区读取出来数据进行解析
     bool process_write(HTTP_CODE ret); //写入响应到写缓冲区中
+
+    void parser_header(const string &text, map<string, string> &m_map);//解析请求的内容
+    void parser_requestline(const string &text, map<string, string> &m_map);//解析请求的第一行
+
+    void do_request();//确定到底请求的是哪一个页面
     /*
     HTTP_CODE parser_requestline(); //三个解析函数，用于解析？？？
     HTTP_CODE parser_header();
@@ -92,6 +99,8 @@ private:
     char write_buff[BUFF_WRITE_SIZE]; //每个http连接都有一个读缓冲区和写缓冲区
     int read_for_now = 0;
     int write_for_now = 0;
+
+    map<string, string> m_map; //http连接的各项属性
 };
 
 #endif

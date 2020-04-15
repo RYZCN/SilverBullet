@@ -39,7 +39,12 @@ void http_conn::init(int socketfd, const sockaddr_in &addr) //套接字的初始
     m_socket = socketfd;
     m_addr = addr;
     addfd(m_epollfd, m_socket);
+    init();
+}
 
+void http_conn::init()
+{
+    filename = "";
     memset(read_buff, '\0', BUFF_READ_SIZE); //清空缓冲区
     memset(write_buff, '\0', BUFF_WRITE_SIZE);
     read_for_now = 0;
@@ -69,6 +74,35 @@ void http_conn::process() //对请求进行处理
     modfd(m_epollfd, m_socket, EPOLLOUT);
     //cout << "add writeble event to apoll_list" << endl;
 }
+
+void http_conn::parser_requestline(const string &text, map<string, string> &m_map)
+{
+    string m_method = text.substr(0, text.find(" "));
+    string m_url = text.substr(text.find_first_of(" ") + 1, text.find_last_of(" ") - text.find_first_of(" ") - 1);
+    string m_protocol = text.substr(text.find_last_of(" ") + 1);
+    m_map["method"] = m_method;
+    m_map["url"] = m_url;
+    m_map["protocol"] = m_protocol;
+}
+void http_conn::parser_header(const string &text, map<string, string> &m_map)
+{
+    if (text.size() > 0)
+    {
+        if (text.find(": ") <= text.size())
+        {
+            string m_type = text.substr(0, text.find(": "));
+            string m_content = text.substr(text.find(": ") + 2);
+            m_map[m_type] = m_content;
+        }
+        else if (text.find("=") <= text.size())
+        {
+            string m_type = text.substr(0, text.find("="));
+            string m_content = text.substr(text.find("=") + 1);
+            m_map[m_type] = m_content;
+        }
+    }
+}
+
 http_conn::HTTP_CODE http_conn::process_read()
 {
     //从读缓冲区读取，并且进行解析,主状态机预警
@@ -76,24 +110,79 @@ http_conn::HTTP_CODE http_conn::process_read()
     //首先初始化主、从状态机的状态
     HTTP_CODE ret = NO_REQUEST;
     LINE_STATE line_ret = LINE_OK;
-    string text; // 初始化字符串，用于读取数据
 
-    //先不考虑解析http协议,统一认为这个是get请求
-    return GET_REQUEST;
+    string m_head = "";
+    string m_left = read_buff; //把读入缓冲区的数据转化为string
+    int flag = 0;
+    while (true)
+    {
+        //对每一行进行处理
+        m_head = m_left.substr(0, m_left.find("\r\n"));
+        m_left = m_left.substr(m_left.find("\r\n") + 2);
+        if (flag == 0)
+        {
+            flag = 1;
+            //cout << "request line : " << m_head << endl;
+            parser_requestline(m_head, m_map);
+        }
+        else
+        {
+            //cout << "head : " << m_head << endl;
+            parser_header(m_head, m_map);
+        }
+
+        //cout <<"left:\n"<< m_left << endl;
+        if (m_left == "")
+        {
+            break;
+        }
+    }
+    /*
+    cout << "map:--------------------------------------------------------------------" << endl;
+    for (auto i : m_map)
+    {
+        cout << i.first << ":" << i.second << endl;
+    }
+    cout << "mapok:+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+    */
+    do_request();
+    if (m_map["method"] == "POST")
+    {
+        return POST_REQUEST;
+    }
+    else
+    {
+        return GET_REQUEST;
+    }
+}
+
+void http_conn::do_request()
+{
+    filename = "../root/root.html";
 }
 
 bool http_conn::process_write(HTTP_CODE ret)
 {
     //先随便返回什么东西
-
-    string temp = "HTTP/1.1 200 OK\r\n\r\n<html><b>hello world!</b></html>";
-    if (temp.size() + 1 > BUFF_WRITE_SIZE)
+    if (ret == POST_REQUEST)
     {
-        cout << "too long" << endl;
+        //do post;
     }
     else
     {
-        strcpy(write_buff, temp.c_str());
+
+        int fd = open(filename.c_str(), O_RDONLY);
+        cout << fd << endl;
+    
+        string temp = "HTTP/1.1 200 OK\r\n\r\n<html><b>hello world!</b></html>";
+        if (temp.size() + 1 > BUFF_WRITE_SIZE)
+        {
+            cout << "too long" << endl;
+        }
+        else
+        {
+            strcpy(write_buff, temp.c_str());
+        }
     }
 
     return true;
@@ -127,6 +216,7 @@ bool http_conn::read() //把socket的东西全部读到读缓冲区里面
         //cout << "we read::" << read_buff << endl;
         read_for_now += bytes_read;
     }
+
     return true;
 }
 
@@ -141,8 +231,10 @@ bool http_conn::write() //把响应的内容写到写缓冲区中
         return false;
     }
     modfd(m_epollfd, m_socket, EPOLLIN);
-
-    //发送完后在事件表移除这个描述符?真的假的？
-    //removefd(m_epollfd, m_socket);
+    if(m_map["Connection"]!="keep-alive")
+    {
+        //不是长连接的话
+        close_conn();
+    }
     return true;
 }

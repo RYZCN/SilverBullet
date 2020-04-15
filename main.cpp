@@ -52,9 +52,9 @@ int main(int argc, char *agrv[])
 
     int port = 12345;
     pool<http_conn> m_threadpool(10, 100); //创建线程池对象
-    cout << "create m_threadpool " << endl;
+    //cout << "create m_threadpool " << endl;
     vector<http_conn *> http_user_list(MAX_FD, nullptr); //连接数量取决于描述符的数量
-    cout << "create http_user_list " << endl;
+    //cout << "create http_user_list " << endl;
     int user_count = 0; //用户数为0
 
     int listenfd = socket(PF_INET, SOCK_STREAM, 0); //socket
@@ -64,7 +64,7 @@ int main(int argc, char *agrv[])
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
     bind(listenfd, (struct sockaddr *)&address, sizeof(address));
-    cout << "bind" << endl;
+    //cout << "bind" << endl;
 
     listen(listenfd, 5);
     //cout << "listen, listenfd : " << listenfd << endl;
@@ -132,18 +132,12 @@ int main(int argc, char *agrv[])
             else if (event_list[i].events & EPOLLOUT)
             {
                 //服务器的数据要写出去
-                if (http_user_list[socketfd]->write())
+                if (!http_user_list[socketfd]->write())
                 {
-                    cout << "returned some response" << endl;
-                    //关闭套接字的时机需要好好研究
-                    http_user_list[socketfd]->close_conn();
+                    cout << "write error" << endl;
+                    
                 }
-                /*
-                else
-                {
-                    http_user_list[socketfd]->close_conn();
-                }
-                */
+        
             }
         }
     }
