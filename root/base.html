@@ -1,0 +1,43 @@
+<!doctype html>
+
+<section class="content">
+
+
+    <header>
+        <h1 style="text-align:center;font-size: 100px;">you are welcome</h1>
+        <h2>
+            <div align="center"><img src="./1.jpg" title="A very good fig" /></div>
+        </h2>
+    </header>
+
+
+    <body>
+
+        <!script src="static/js/socket.io.js" />
+
+        <!script src="static/js/jquery.min.js" />
+
+
+        <div style="height:140px;width:700px;float:left;text-align:center;position: relative;left: 3%;">
+            <div class="card"
+                style="background-color:rgb(166, 210, 240);box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);transition: 0.3s;width: 98%;height: 90%;border-radius: 15px;margin:auto;">
+                <label for="prs">set air pressure: 0-6 bar </label>
+                <br>
+                <input name="prs" id="set_prs" style="width: 105px; height: 30px;" value='3'></input>
+                <button style="height:30px;width:70px;" onclick="submit_set_prs()">yes</button>
+                <br>
+                <br>
+                <button style="height:40px;width:80px;" onclick="work()">open</button>
+                <button style="height:40px;width:80px;" onclick="end_work()">close</button>
+            </div>
+
+        </div>
+
+
+
+
+
+
+
+    </body>
+</section>

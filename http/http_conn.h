@@ -8,6 +8,8 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <map>
@@ -60,6 +62,7 @@ public:
     static int m_epollfd; //当前http连接的epoll描述符,这个是静态的
     static int m_user_count;
 
+
 private:
     HTTP_CODE process_read();          //从读缓冲区读取出来数据进行解析
     bool process_write(HTTP_CODE ret); //写入响应到写缓冲区中
@@ -94,7 +97,10 @@ private:
     int m_socket; //当前属于这个http连接的套接字
     sockaddr_in m_addr;
 
+    struct stat m_file_stat;
+    struct iovec m_iovec[2];
     string filename;
+    char *file_addr;
     char read_buff[BUFF_READ_SIZE];   //每个http连接都有一个读缓冲区和写缓冲区
     char write_buff[BUFF_WRITE_SIZE]; //每个http连接都有一个读缓冲区和写缓冲区
     int read_for_now = 0;

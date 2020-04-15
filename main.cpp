@@ -58,7 +58,7 @@ int main(int argc, char *agrv[])
     int user_count = 0; //用户数为0
 
     int listenfd = socket(PF_INET, SOCK_STREAM, 0); //socket
-    cout << "create listenfd" << endl;
+    //cout << "create listenfd" << endl;
     struct sockaddr_in address;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;

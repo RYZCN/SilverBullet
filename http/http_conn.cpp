@@ -58,7 +58,7 @@ void http_conn::close_conn()
     {
         removefd(m_epollfd, m_socket);
         m_user_count--;
-        cout << "we closed socket:" << m_socket << endl;
+        //cout << "we closed socket:" << m_socket << endl;
         m_socket = -1; //-1就是代表没有正在连接的套接字
     }
 }
@@ -105,12 +105,7 @@ void http_conn::parser_header(const string &text, map<string, string> &m_map)
 
 http_conn::HTTP_CODE http_conn::process_read()
 {
-    //从读缓冲区读取，并且进行解析,主状态机预警
-
-    //首先初始化主、从状态机的状态
-    HTTP_CODE ret = NO_REQUEST;
-    LINE_STATE line_ret = LINE_OK;
-
+    //cout << "request:\n"<< read_buff << endl;
     string m_head = "";
     string m_left = read_buff; //把读入缓冲区的数据转化为string
     int flag = 0;
@@ -158,7 +153,15 @@ http_conn::HTTP_CODE http_conn::process_read()
 
 void http_conn::do_request()
 {
-    filename = "../root/root.html";
+    //区分get和post都请求了那些文件或网页
+    if (m_map["url"] == "/1.jpg")
+    {
+        filename = "./root/1.jpg";
+    }
+    else
+    {
+        filename = "./root/base.html";
+    }
 }
 
 bool http_conn::process_write(HTTP_CODE ret)
@@ -170,18 +173,25 @@ bool http_conn::process_write(HTTP_CODE ret)
     }
     else
     {
-
+        //cout << "want to open " << filename << endl;
         int fd = open(filename.c_str(), O_RDONLY);
-        cout << fd << endl;
-    
-        string temp = "HTTP/1.1 200 OK\r\n\r\n<html><b>hello world!</b></html>";
-        if (temp.size() + 1 > BUFF_WRITE_SIZE)
+        //cout << "fd:" << fd << endl;
+        stat(filename.c_str(), &m_file_stat);
+        file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+        m_iovec[1].iov_base = file_addr;
+        m_iovec[1].iov_len = m_file_stat.st_size;
+
+        string response_head = "HTTP/1.1 200 OK\r\n\r\n";
+        char head_temp[response_head.size()];
+        strcpy(head_temp, response_head.c_str());
+        if (response_head.size() + 1 > BUFF_WRITE_SIZE)
         {
             cout << "too long" << endl;
         }
         else
         {
-            strcpy(write_buff, temp.c_str());
+            m_iovec[0].iov_base = head_temp;
+            m_iovec[0].iov_len = response_head.size() * sizeof(char);
         }
     }
 
@@ -204,12 +214,12 @@ bool http_conn::read() //把socket的东西全部读到读缓冲区里面
             {
                 break;
             }
-            cout << "bytes_read == -1" << endl;
+            //cout << "bytes_read == -1" << endl;
             return false;
         }
         else if (bytes_read == 0) //没东西可读？
         {
-            cout << "bytes_read == 0" << endl;
+            //cout << "bytes_read == 0" << endl;
             return false; //读完了为什么返回0？
             continue;
         }
@@ -224,16 +234,21 @@ bool http_conn::write() //把响应的内容写到写缓冲区中
 {
     int bytes_write = 0;
     //先不考虑大文件的情况
-    bytes_write = send(m_socket, write_buff, BUFF_WRITE_SIZE, 0);
-
+    //bytes_write = send(m_socket, write_buff, BUFF_WRITE_SIZE, 0);
+    bytes_write = writev(m_socket, m_iovec, 2);
+    //cout << "bytes_write" << bytes_write << endl;
     if (bytes_write <= 0)
     {
         return false;
     }
     modfd(m_epollfd, m_socket, EPOLLIN);
-    if(m_map["Connection"]!="keep-alive")
+    if (m_map["Connection"] != "keep-alive")
     {
         //不是长连接的话
+        close_conn();
+    }
+    else
+    {
         close_conn();
     }
     return true;
