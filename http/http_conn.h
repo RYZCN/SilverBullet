@@ -2,17 +2,18 @@
 #define HTTP_CONN_H
 
 #include "../lock/lock.h"
+#include "../userdata/redis.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <iostream>
+#include <map>
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/epoll.h>
-#include <sys/socket.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <errno.h>
-#include <map>
 using namespace std;
 
 class http_conn //http 连接类
@@ -62,15 +63,17 @@ public:
     static int m_epollfd; //当前http连接的epoll描述符,这个是静态的
     static int m_user_count;
 
-
 private:
     HTTP_CODE process_read();          //从读缓冲区读取出来数据进行解析
     bool process_write(HTTP_CODE ret); //写入响应到写缓冲区中
 
-    void parser_header(const string &text, map<string, string> &m_map);//解析请求的内容
-    void parser_requestline(const string &text, map<string, string> &m_map);//解析请求的第一行
+    void parser_header(const string &text, map<string, string> &m_map);      //解析请求的内容
+    void parser_requestline(const string &text, map<string, string> &m_map); //解析请求的第一行
+    void parser_postinfo(const string &text, map<string, string> &m_map);    //解析post请求正文
 
-    void do_request();//确定到底请求的是哪一个页面
+    void do_request(); //确定到底请求的是哪一个页面
+
+    void unmap();
     /*
     HTTP_CODE parser_requestline(); //三个解析函数，用于解析？？？
     HTTP_CODE parser_header();

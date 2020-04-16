@@ -49,6 +49,7 @@ void http_conn::init()
     memset(write_buff, '\0', BUFF_WRITE_SIZE);
     read_for_now = 0;
     write_for_now = 0;
+    
 }
 
 void http_conn::close_conn()
@@ -103,12 +104,23 @@ void http_conn::parser_header(const string &text, map<string, string> &m_map)
     }
 }
 
+void http_conn::parser_postinfo(const string &text, map<string, string> &m_map)
+{
+    //username=chaishilin&passwd=12345
+    cout << "post:   " << text << endl;
+    string username = text.substr(0 + 9, text.find("&") - 9);
+    string passwd = text.substr(text.find("&") + 1 + 7);
+    m_map["username"] = username;
+    m_map["passwd"] = passwd;
+}
+
 http_conn::HTTP_CODE http_conn::process_read()
 {
-    //cout << "request:\n"<< read_buff << endl;
+   
     string m_head = "";
     string m_left = read_buff; //把读入缓冲区的数据转化为string
     int flag = 0;
+    int do_post_flag = 0;
     while (true)
     {
         //对每一行进行处理
@@ -120,29 +132,36 @@ http_conn::HTTP_CODE http_conn::process_read()
             //cout << "request line : " << m_head << endl;
             parser_requestline(m_head, m_map);
         }
+
+        else if (do_post_flag)
+        {
+            //cout << "do: post" << endl;
+            parser_postinfo(m_head, m_map);
+            break;
+        }
         else
         {
             //cout << "head : " << m_head << endl;
             parser_header(m_head, m_map);
         }
-
-        //cout <<"left:\n"<< m_left << endl;
+        if (m_head == "")
+            do_post_flag = 1;
         if (m_left == "")
-        {
             break;
-        }
     }
     /*
     cout << "map:--------------------------------------------------------------------" << endl;
     for (auto i : m_map)
     {
-        cout << i.first << ":" << i.second << endl;
+        if(i.first == "username" || i.first =="passwd")
+            cout << i.first << ":" << i.second << endl;
     }
     cout << "mapok:+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+    //favicon.ico
     */
-    do_request();
     if (m_map["method"] == "POST")
     {
+        //cout << "request" << read_buff << endl;
         return POST_REQUEST;
     }
     else
@@ -154,49 +173,90 @@ http_conn::HTTP_CODE http_conn::process_read()
 void http_conn::do_request()
 {
     //区分get和post都请求了那些文件或网页
-    if (m_map["url"] == "/1.jpg")
+    cout << "method: " << m_map["method"] << " url: " << m_map["url"] << endl;
+    if (m_map["method"] == "POST")
     {
-        filename = "./root/1.jpg";
-    }
-    else
-    {
-        filename = "./root/base.html";
-    }
-}
-
-bool http_conn::process_write(HTTP_CODE ret)
-{
-    //先随便返回什么东西
-    if (ret == POST_REQUEST)
-    {
-        //do post;
-    }
-    else
-    {
-        //cout << "want to open " << filename << endl;
-        int fd = open(filename.c_str(), O_RDONLY);
-        //cout << "fd:" << fd << endl;
-        stat(filename.c_str(), &m_file_stat);
-        file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-        m_iovec[1].iov_base = file_addr;
-        m_iovec[1].iov_len = m_file_stat.st_size;
-
-        string response_head = "HTTP/1.1 200 OK\r\n\r\n";
-        char head_temp[response_head.size()];
-        strcpy(head_temp, response_head.c_str());
-        if (response_head.size() + 1 > BUFF_WRITE_SIZE)
+        redis_clt *m_redis = redis_clt::getinstance();
+        if (m_map["url"] == "/base.html" || m_map["url"] == "/") //如果来自于登录界面
         {
-            cout << "too long" << endl;
+            //处理登录请求
+            //cout << "处理登录请求" << endl;
+            cout << "user's passwd: " << m_redis->getUserpasswd(m_map["username"]) << endl;
+            cout << "we got : " << m_map["passwd"] << endl;
+            if (m_redis->getUserpasswd(m_map["username"]) == m_map["passwd"])
+            {
+                //cout << "登录进入欢迎界面" << endl;
+                filename = "./root/welcome.html";//登录进入欢迎界面
+            }
+            else
+            {
+                //cout << "登录失败界面" << endl;
+                filename = "./root/error.html";//进入登录失败界面
+            }
+        }
+        else if (m_map["url"] == "/regester.html")//如果来自注册界面
+        {
+            m_redis->setUserpasswd(m_map["username"], m_map["passwd"]);
+            cout << "set:" << m_map["username"]<<"passwd:  "<<m_map["passwd"] << endl;
+            filename = "./root/regester.html"; //注册后进入初始登录界面
         }
         else
         {
-            m_iovec[0].iov_base = head_temp;
-            m_iovec[0].iov_len = response_head.size() * sizeof(char);
+            filename = "./root/base.html"; //进入初始登录界面
         }
     }
+    else if (m_map["method"] == "GET")
+    {
+        if (m_map["url"] == "/")
+        {
+            m_map["url"] = "/base.html";
+        }
+        filename = "./root" + m_map["url"];
+    }
+    else
+    {
+        filename = "./root/error.html";
+    }
 
+    cout << "return filename : " << filename << endl;
+}
+void http_conn::unmap()
+{
+    if(file_addr)
+    {
+        munmap(file_addr, m_file_stat.st_size);
+        file_addr = 0;
+    }
+}
+bool http_conn::process_write(HTTP_CODE ret)
+{
+    //先随便返回什么东西
+    do_request();
+
+    //cout << "want to open " << filename << endl;
+    int fd = open(filename.c_str(), O_RDONLY);
+    //cout << "fd:" << fd << endl;
+    stat(filename.c_str(), &m_file_stat);
+    file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    m_iovec[1].iov_base = file_addr;
+    m_iovec[1].iov_len = m_file_stat.st_size;
+
+    string response_head = "HTTP/1.1 200 OK\r\n\r\n";
+    char head_temp[response_head.size()];
+    strcpy(head_temp, response_head.c_str());
+    if (response_head.size() + 1 > BUFF_WRITE_SIZE)
+    {
+        cout << "too long" << endl;
+    }
+    else
+    {
+        m_iovec[0].iov_base = head_temp;
+        m_iovec[0].iov_len = response_head.size() * sizeof(char);
+    }
     return true;
 }
+
+
 bool http_conn::read() //把socket的东西全部读到读缓冲区里面
 {
     if (read_for_now > BUFF_READ_SIZE) //如果当前可以写入读缓冲区的位置已经超出了缓冲区长度了
@@ -251,5 +311,6 @@ bool http_conn::write() //把响应的内容写到写缓冲区中
     {
         close_conn();
     }
+    unmap();
     return true;
 }

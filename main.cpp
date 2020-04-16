@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <vector>
+
 using namespace std;
 
 extern void addfd(int epollfd, int socketfd);
@@ -57,6 +58,7 @@ int main(int argc, char *agrv[])
     //cout << "create http_user_list " << endl;
     int user_count = 0; //用户数为0
 
+    
     int listenfd = socket(PF_INET, SOCK_STREAM, 0); //socket
     //cout << "create listenfd" << endl;
     struct sockaddr_in address;
@@ -123,7 +125,7 @@ int main(int argc, char *agrv[])
                 }
                 else
                 {
-                    cout << "read nothing" << endl;
+                    //cout << "read nothing" << endl;
                     //没有读到数据的话
                     http_user_list[socketfd]->close_conn();
                 }
@@ -134,7 +136,7 @@ int main(int argc, char *agrv[])
                 //服务器的数据要写出去
                 if (!http_user_list[socketfd]->write())
                 {
-                    cout << "write error" << endl;
+                    //cout << "write error" << endl;
                     
                 }
         
