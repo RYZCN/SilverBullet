@@ -1,6 +1,5 @@
 # SilverBullet
-* Author Zhang Ruyuan
-* Author Chai Shilin
+* cshil in charge
 
 ## 多线程的web服务器，可以解析http请求
 * 基于半同步半反应堆模式，建立线程池，实现高并发
