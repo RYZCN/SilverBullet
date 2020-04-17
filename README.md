@@ -30,6 +30,9 @@
 ### 数据库
 * 使用redis键值对来储存用户名和密码
 * 单例模式创建redis客户端类，用于用户信息查询
+* 需要拥有redis环境
+    + 安装redis `sudo apt-get install redis-server`
+    + 安装C++的hiredis库  `sudo apt-get install libhiredis-dev`
 
 ### 网页页面
 * 具有登录、注册、登录错误、登录成功、帮助五个页面
