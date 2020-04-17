@@ -33,3 +33,12 @@
 
 ### 网页页面
 * 具有登录、注册、登录错误、登录成功、帮助五个页面
+
+### 压力测试
+* 采用webbench进行压力测试
+* `webbench -c 10000 -t 300 http://127.0.0.1:33345/`
+* 测试结果
+
+    CPU|RAM|Speed | Requests susceed |Requests failed 
+    -|:-:|:-:|:-:|-
+    i7 8th| 16G|2207402 pages/min, 2569489 bytes/sec|11021590 | 15420

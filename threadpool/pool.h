@@ -72,10 +72,12 @@ template <typename T>
 bool pool<T>::append(T *requset)
 {
 
+    //cout << "want to get lock" << endl;
     m_lock.dolock();
     if (request_list.size() > m_max_request)
     {
         m_lock.unlock();
+        //cout << "too many request_list" << endl;
         return false;
     }
     request_list.push_back(requset);
@@ -100,6 +102,7 @@ void pool<T>::run()
     {
         m_sem.wait();    //信号量
         m_lock.dolock(); //加锁,竞争条件
+        //cout << "request num :  " << request_list.size() << endl;
         if (request_list.size() <= 0)
         {
             m_lock.unlock();
@@ -115,6 +118,8 @@ void pool<T>::run()
                 continue;
             }
             request->process();
+            //delete request;//非常奇怪咯
+            //request = nullptr;
         }
     }
 }

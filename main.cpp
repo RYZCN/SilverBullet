@@ -20,12 +20,19 @@ void destroy_user_list(vector<http_conn *> http_user_list)
         if (i)
             delete i;
 }
-
+int http_conut(vector<http_conn *> http_user_list)
+{
+    int count = 0;
+    for (auto i : http_user_list)
+        if (i != nullptr)
+            ++count;
+    return count;
+}
 void addfd_lt(int epollfd, int socketfd)
 {
     epoll_event event;
     event.data.fd = socketfd;
-    event.events = EPOLLIN | EPOLLHUP;
+    event.events = EPOLLIN | EPOLLRDHUP;
     epoll_ctl(epollfd, EPOLL_CTL_ADD, socketfd, &event);
 }
 /*
@@ -39,34 +46,29 @@ void addfd_lt(int epollfd, int socketfd)
 
 int main(int argc, char *agrv[])
 {
-    /*
-    
-    if (argc<=1)
+    int port;
+    if (argc <= 1)
     {
-        cout << "port is needed!" << endl;
-        return 0;
+        cout << "open default port : 12345" << endl;
+        port = 12345;
+    }
+    else
+    {
+        port = atoi(agrv[1]);
     }
 
-    int port = atoi(agrv[1]);
-    cout << "port is : " << port << endl;
-    */
+    pool<http_conn> m_threadpool(10, 10000);             //创建线程池对象
+    vector<http_conn *> http_user_list(MAX_FD, nullptr); //连接数量取决于描述符的数量,这个太奇怪了，析构什么的
+    int user_count = 0;                                  //用户数为0
 
-    int port = 12345;
-    pool<http_conn> m_threadpool(10, 100); //创建线程池对象
-    //cout << "create m_threadpool " << endl;
-    vector<http_conn *> http_user_list(MAX_FD, nullptr); //连接数量取决于描述符的数量
-    //cout << "create http_user_list " << endl;
-    int user_count = 0; //用户数为0
-
-    
     int listenfd = socket(PF_INET, SOCK_STREAM, 0); //socket
-    //cout << "create listenfd" << endl;
     struct sockaddr_in address;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
+    int flag = 1;
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     bind(listenfd, (struct sockaddr *)&address, sizeof(address));
-    //cout << "bind" << endl;
 
     listen(listenfd, 5);
     //cout << "listen, listenfd : " << listenfd << endl;
@@ -75,20 +77,16 @@ int main(int argc, char *agrv[])
     epoll_event event_list[MAX_EVENT_NUMBER];
     int epollfd = epoll_create(5);
     addfd_lt(epollfd, listenfd);
-    //cout << "build event list" << endl;
     http_conn::m_epollfd = epollfd; //更新http_conn类中的epoll描述符
 
     while (1)
     {
-        //cout << "epoll_wait" << endl;
         int number = epoll_wait(epollfd, event_list, MAX_EVENT_NUMBER, -1);
-        //cout << "epoll_wait number:" << number << endl;
         for (int i = 0; i < number; ++i)
         {
             int socketfd = event_list[i].data.fd;
             if (socketfd == listenfd)
             {
-                //cout << "---------------------" << endl;
                 //cout << "new client" << endl;
                 //新的连接
                 struct sockaddr_in client_addr;
@@ -96,26 +94,27 @@ int main(int argc, char *agrv[])
                 int connfd = accept(listenfd, (struct sockaddr *)(&client_addr), &client_addr_length);
                 if (connfd < 0)
                 {
-                    cout << "bad accept" << endl;
+                    printf("%s\n", strerror(errno));
                     continue; //跳过这一轮
                 }
                 if (http_conn::m_user_count >= MAX_FD)
-                {
-                    cout << "too many users" << endl;
                     continue;
-                }
-                if (!http_user_list[connfd])
+                if (http_user_list[connfd] == nullptr)
                 {
-                    http_user_list[connfd] = new http_conn;
+                    cout << "new one http  " << connfd << endl;
+                    http_user_list[connfd] = new http_conn();
                 }
                 http_user_list[connfd]->init(connfd, client_addr);
-                //cout << "init the http conn" << endl;
-                //cout << "+++++++++++++++++++++++" << endl;
+            }
+            else if (event_list[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
+            {
+                //cout << "error!!" << endl;
+                //printf("%s\n", strerror(errno));
+                http_user_list[socketfd]->close_conn("error!");
             }
             else if (event_list[i].events & EPOLLIN)
             {
-                //cout << "---------------------" << endl;
-                //cout << "old client" << endl;
+                //cout << "old client" << socketfd << endl;
                 //客户的数据要读进来
                 if (http_user_list[socketfd]->read())
                 {
@@ -125,28 +124,23 @@ int main(int argc, char *agrv[])
                 }
                 else
                 {
-                    //cout << "read nothing" << endl;
+                    cout << "read error!!!!!!!!!!" << endl;
                     //没有读到数据的话
-                    http_user_list[socketfd]->close_conn();
+                    http_user_list[socketfd]->close_conn("read nothing");
                 }
-                //cout << "+++++++++++++++++++++++" << endl;
             }
             else if (event_list[i].events & EPOLLOUT)
             {
-                //服务器的数据要写出去
-                if (!http_user_list[socketfd]->write())
-                {
-                    //cout << "write error" << endl;
-                    
-                }
-        
+                //cout << "want to write" << endl;
+                http_user_list[socketfd]->write();
+                http_user_list[socketfd]->close_conn("write over");
             }
         }
     }
     close(epollfd);
     close(listenfd);
     destroy_user_list(http_user_list);
-    cout << "4 ok" << endl;
+    //cout << "4 ok" << endl;
 
     return 0;
 }

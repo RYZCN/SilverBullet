@@ -12,7 +12,7 @@ void addfd(int epollfd, int socketfd)
     //把该描述符添加到epoll的事件表
     epoll_event m_event;                                   //新建一个事件
     m_event.data.fd = socketfd;                            //使得描述符为本描述符
-    m_event.events = EPOLLIN | EPOLLET | EPOLLHUP;         //监听输入、边缘触发、挂起？ 知识点，什么叫挂起？
+    m_event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;       //监听输入、边缘触发、挂起？ 知识点，什么叫挂起？
     epoll_ctl(epollfd, EPOLL_CTL_ADD, socketfd, &m_event); //将该事件添加，知识点，ctl的作用？
     setnonblocking(socketfd);                              //设置非阻塞，什么叫阻塞非阻塞
 }
@@ -20,13 +20,13 @@ void addfd(int epollfd, int socketfd)
 void removefd(int epollfd, int socketfd)
 {
     epoll_ctl(epollfd, EPOLL_CTL_DEL, socketfd, 0); //把该套接字的对应事件删除
-    close(socketfd);                                //关闭该套接字
+    close(socketfd);
 }
 
 void modfd(int epollfd, int socketed, int ev)
 {
     epoll_event m_event;
-    m_event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLHUP;
+    m_event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
     m_event.data.fd = socketed;
     epoll_ctl(epollfd, EPOLL_CTL_MOD, socketed, &m_event);
 }
@@ -49,31 +49,33 @@ void http_conn::init()
     memset(write_buff, '\0', BUFF_WRITE_SIZE);
     read_for_now = 0;
     write_for_now = 0;
-    
 }
 
-void http_conn::close_conn()
+void http_conn::close_conn(string msg)
 {
     //将当前的描述符在epoll监听事件里面去除
     if (m_socket != -1)
     {
         removefd(m_epollfd, m_socket);
         m_user_count--;
-        //cout << "we closed socket:" << m_socket << endl;
+        //cout << "we closed socket:" << m_socket <<"|" <<msg<< endl;
         m_socket = -1; //-1就是代表没有正在连接的套接字
     }
 }
 
 void http_conn::process() //对请求进行处理
 {
-    //cout << "begin to process the request" << endl;
     //首先进行报文的解析
     HTTP_CODE ret = process_read();
+    if (ret == NO_REQUEST)
+    {
+        modfd(m_epollfd, m_socket, EPOLLIN);
+        return;
+    }
     //然后进行报文的响应
     bool result = process_write(ret);
-    //最后向epoll的监听的事件表中添加可写事件
-    modfd(m_epollfd, m_socket, EPOLLOUT);
-    //cout << "add writeble event to apoll_list" << endl;
+    modfd(m_epollfd, m_socket, EPOLLOUT); //最后向epoll的监听的事件表中添加可写事件
+
 }
 
 void http_conn::parser_requestline(const string &text, map<string, string> &m_map)
@@ -107,7 +109,7 @@ void http_conn::parser_header(const string &text, map<string, string> &m_map)
 void http_conn::parser_postinfo(const string &text, map<string, string> &m_map)
 {
     //username=chaishilin&passwd=12345
-    cout << "post:   " << text << endl;
+    //cout << "post:   " << text << endl;
     string username = text.substr(0 + 9, text.find("&") - 9);
     string passwd = text.substr(text.find("&") + 1 + 7);
     m_map["username"] = username;
@@ -116,7 +118,7 @@ void http_conn::parser_postinfo(const string &text, map<string, string> &m_map)
 
 http_conn::HTTP_CODE http_conn::process_read()
 {
-   
+
     string m_head = "";
     string m_left = read_buff; //把读入缓冲区的数据转化为string
     int flag = 0;
@@ -164,16 +166,20 @@ http_conn::HTTP_CODE http_conn::process_read()
         //cout << "request" << read_buff << endl;
         return POST_REQUEST;
     }
-    else
+    else if (m_map["method"] == "GET")
     {
         return GET_REQUEST;
+    }
+    else
+    {
+        return NO_REQUEST;
     }
 }
 
 void http_conn::do_request()
 {
     //区分get和post都请求了那些文件或网页
-    cout << "method: " << m_map["method"] << " url: " << m_map["url"] << endl;
+    //cout << "method: " << m_map["method"] << " url: " << m_map["url"] << endl;
     if (m_map["method"] == "POST")
     {
         redis_clt *m_redis = redis_clt::getinstance();
@@ -181,23 +187,23 @@ void http_conn::do_request()
         {
             //处理登录请求
             //cout << "处理登录请求" << endl;
-            cout << "user's passwd: " << m_redis->getUserpasswd(m_map["username"]) << endl;
-            cout << "we got : " << m_map["passwd"] << endl;
+            //cout << "user's passwd: " << m_redis->getUserpasswd(m_map["username"]) << endl;
+            //cout << "we got : " << m_map["passwd"] << endl;
             if (m_redis->getUserpasswd(m_map["username"]) == m_map["passwd"])
             {
                 //cout << "登录进入欢迎界面" << endl;
-                filename = "./root/welcome.html";//登录进入欢迎界面
+                filename = "./root/welcome.html"; //登录进入欢迎界面
             }
             else
             {
                 //cout << "登录失败界面" << endl;
-                filename = "./root/error.html";//进入登录失败界面
+                filename = "./root/error.html"; //进入登录失败界面
             }
         }
-        else if (m_map["url"] == "/regester.html")//如果来自注册界面
+        else if (m_map["url"] == "/regester.html") //如果来自注册界面
         {
             m_redis->setUserpasswd(m_map["username"], m_map["passwd"]);
-            cout << "set:" << m_map["username"]<<"passwd:  "<<m_map["passwd"] << endl;
+            //cout << "set:" << m_map["username"]<<"passwd:  "<<m_map["passwd"] << endl;
             filename = "./root/regester.html"; //注册后进入初始登录界面
         }
         else
@@ -218,11 +224,11 @@ void http_conn::do_request()
         filename = "./root/error.html";
     }
 
-    cout << "return filename : " << filename << endl;
+    //cout << "return filename : " << filename << endl;
 }
 void http_conn::unmap()
 {
-    if(file_addr)
+    if (file_addr)
     {
         munmap(file_addr, m_file_stat.st_size);
         file_addr = 0;
@@ -230,41 +236,28 @@ void http_conn::unmap()
 }
 bool http_conn::process_write(HTTP_CODE ret)
 {
-    //先随便返回什么东西
+
     do_request();
 
-    //cout << "want to open " << filename << endl;
     int fd = open(filename.c_str(), O_RDONLY);
-    //cout << "fd:" << fd << endl;
+
     stat(filename.c_str(), &m_file_stat);
     file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     m_iovec[1].iov_base = file_addr;
     m_iovec[1].iov_len = m_file_stat.st_size;
+    close(fd);//居然忘记关闭描述符了
 
-    string response_head = "HTTP/1.1 200 OK\r\n\r\n";
-    char head_temp[response_head.size()];
-    strcpy(head_temp, response_head.c_str());
-    if (response_head.size() + 1 > BUFF_WRITE_SIZE)
-    {
-        cout << "too long" << endl;
-    }
-    else
-    {
-        m_iovec[0].iov_base = head_temp;
-        m_iovec[0].iov_len = response_head.size() * sizeof(char);
-    }
     return true;
 }
-
 
 bool http_conn::read() //把socket的东西全部读到读缓冲区里面
 {
     if (read_for_now > BUFF_READ_SIZE) //如果当前可以写入读缓冲区的位置已经超出了缓冲区长度了
     {
+        cout << "read error at beigin" << endl;
         return false;
     }
     int bytes_read = 0;
-    //return true;
     while (true)
     {
         bytes_read = recv(m_socket, read_buff + read_for_now, BUFF_READ_SIZE - read_for_now, 0);
@@ -274,16 +267,15 @@ bool http_conn::read() //把socket的东西全部读到读缓冲区里面
             {
                 break;
             }
-            //cout << "bytes_read == -1" << endl;
+            cout << "bytes_read == -1" << endl;
             return false;
         }
         else if (bytes_read == 0) //没东西可读？
         {
-            //cout << "bytes_read == 0" << endl;
+            cout << "bytes_read == 0" << endl;
             return false; //读完了为什么返回0？
             continue;
         }
-        //cout << "we read::" << read_buff << endl;
         read_for_now += bytes_read;
     }
 
@@ -294,22 +286,27 @@ bool http_conn::write() //把响应的内容写到写缓冲区中
 {
     int bytes_write = 0;
     //先不考虑大文件的情况
-    //bytes_write = send(m_socket, write_buff, BUFF_WRITE_SIZE, 0);
+    string response_head = "HTTP/1.1 200 OK\r\n\r\n";
+    char head_temp[response_head.size()];
+    strcpy(head_temp, response_head.c_str());
+    m_iovec[0].iov_base = head_temp;
+    m_iovec[0].iov_len = response_head.size() * sizeof(char);
+
     bytes_write = writev(m_socket, m_iovec, 2);
-    //cout << "bytes_write" << bytes_write << endl;
+
     if (bytes_write <= 0)
     {
         return false;
     }
-    modfd(m_epollfd, m_socket, EPOLLIN);
+
     if (m_map["Connection"] != "keep-alive")
     {
         //不是长连接的话
-        close_conn();
+        //close_conn();
     }
     else
     {
-        close_conn();
+        //close_conn();
     }
     unmap();
     return true;

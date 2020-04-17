@@ -54,7 +54,7 @@ public:
 public:
     void init(int socketfd, const sockaddr_in &addr); //初始化套接字
     void init();                                      //实现具体各个参数值的初始化
-    void close_conn();                                //关闭连接
+    void close_conn(string msg = "");                 //关闭连接
     void process();                                   //处理请求
     bool read();                                      //一次性调用recv读取所有数据，读取浏览器发来的全部数据，读到读缓冲区,返回调用是否称成功的信息
     bool write();
