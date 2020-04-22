@@ -58,7 +58,6 @@ void http_conn::close_conn(string msg)
     {
         removefd(m_epollfd, m_socket);
         m_user_count--;
-        //cout << "we closed socket:" << m_socket <<"|" <<msg<< endl;
         m_socket = -1; //-1就是代表没有正在连接的套接字
     }
 }
@@ -282,7 +281,7 @@ bool http_conn::read() //把socket的东西全部读到读缓冲区里面
     return true;
 }
 
-bool http_conn::write() //把响应的内容写到写缓冲区中
+bool http_conn::write() //把响应的内容写到写缓冲区中,并説明该连接是否为长连接
 {
     int bytes_write = 0;
     //先不考虑大文件的情况
@@ -298,16 +297,14 @@ bool http_conn::write() //把响应的内容写到写缓冲区中
     {
         return false;
     }
-
-    if (m_map["Connection"] != "keep-alive")
+    unmap();
+    if (m_map["Connection"] == "keep-alive")
     {
-        //不是长连接的话
-        //close_conn();
+        //return true;
+        return false;
     }
     else
     {
-        //close_conn();
+        return false;
     }
-    unmap();
-    return true;
 }

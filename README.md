@@ -33,6 +33,14 @@
     + 安装redis `sudo apt-get install redis-server`
     + 安装C++的hiredis库  `sudo apt-get install libhiredis-dev`
 
+### 定时器
+* 使用定时器清理非活跃连接
+* 创建管道，信号（定时触发或按键触发）被触发时，向管道内写入
+* epoll监听管道一端的读事件
+* 根据读出的信号不同，进行定时清理或关闭服务的操作
+* 信号handler仅向管道中写数据，用于更新标志位，并不进行真正的清理操作，保证处理足够快速
+* 主函数循环中根据标志位的变化来执行具体的操作
+
 ### 网页页面
 * 具有登录、注册、登录错误、登录成功、帮助五个页面
 
@@ -41,6 +49,19 @@
 * `webbench -c 10000 -t 300 http://127.0.0.1:33345/`
 * 测试结果
 
-    CPU|RAM|Speed | Requests susceed |Requests failed 
-    -|:-:|:-:|:-:|-
-    i7 8th| 16G|2207402 pages/min, 2569489 bytes/sec|11021590 | 15420
+    thread num|CPU|RAM | Requests susceed |Requests failed 
+    :-:|:-:|:-:|:-:|:-:
+    10| i7 8th| 16G|11021590 | 15420
+
+* 加入定时器后，进行压力测试
+* 测试结果好像没啥变化
+
+    thread num|CPU|RAM | Requests susceed |Requests failed 
+    :-:|:-:|:-:|:-:|:-:
+    10|i7 8th| 16G|11199117 | 14603
+
+    thread num|CPU|RAM | Requests susceed |Requests failed 
+    :-:|:-:|:-:|:-:|:-:
+    100| i7 8th| 16G|10904512 | 15485
+
+  
