@@ -71,7 +71,7 @@ private:
     void parser_requestline(const string &text, map<string, string> &m_map); //解析请求的第一行
     void parser_postinfo(const string &text, map<string, string> &m_map);    //解析post请求正文
 
-    void do_request(); //确定到底请求的是哪一个页面
+    bool do_request(); //确定到底请求的是哪一个页面
 
     void unmap();
     /*
@@ -103,7 +103,9 @@ private:
     struct stat m_file_stat;
     struct iovec m_iovec[2];
     string filename;
+    string postmsg;
     char *file_addr;
+    char post_temp[];
     char read_buff[BUFF_READ_SIZE];   //每个http连接都有一个读缓冲区和写缓冲区
     char write_buff[BUFF_WRITE_SIZE]; //每个http连接都有一个读缓冲区和写缓冲区
     int read_for_now = 0;

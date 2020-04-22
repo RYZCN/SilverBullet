@@ -74,7 +74,6 @@ void http_conn::process() //对请求进行处理
     //然后进行报文的响应
     bool result = process_write(ret);
     modfd(m_epollfd, m_socket, EPOLLOUT); //最后向epoll的监听的事件表中添加可写事件
-
 }
 
 void http_conn::parser_requestline(const string &text, map<string, string> &m_map)
@@ -107,12 +106,18 @@ void http_conn::parser_header(const string &text, map<string, string> &m_map)
 
 void http_conn::parser_postinfo(const string &text, map<string, string> &m_map)
 {
-    //username=chaishilin&passwd=12345
+    //username=chaishilin&passwd=12345&votename=alibaba
     //cout << "post:   " << text << endl;
-    string username = text.substr(0 + 9, text.find("&") - 9);
-    string passwd = text.substr(text.find("&") + 1 + 7);
-    m_map["username"] = username;
-    m_map["passwd"] = passwd;
+    string processd = "";
+    string strleft = text;
+    while (true)
+    {
+        processd = strleft.substr(0, strleft.find("&"));
+        m_map[processd.substr(0, processd.find("="))] = processd.substr(processd.find("=") + 1);
+        strleft = strleft.substr(strleft.find("&") + 1);
+        if (strleft == processd)
+            break;
+    }
 }
 
 http_conn::HTTP_CODE http_conn::process_read()
@@ -120,6 +125,8 @@ http_conn::HTTP_CODE http_conn::process_read()
 
     string m_head = "";
     string m_left = read_buff; //把读入缓冲区的数据转化为string
+    //cout << read_buff << endl;
+    //cout << "--------------------" << endl;
     int flag = 0;
     int do_post_flag = 0;
     while (true)
@@ -175,7 +182,7 @@ http_conn::HTTP_CODE http_conn::process_read()
     }
 }
 
-void http_conn::do_request()
+bool http_conn::do_request()
 {
     //区分get和post都请求了那些文件或网页
     //cout << "method: " << m_map["method"] << " url: " << m_map["url"] << endl;
@@ -191,7 +198,10 @@ void http_conn::do_request()
             if (m_redis->getUserpasswd(m_map["username"]) == m_map["passwd"])
             {
                 //cout << "登录进入欢迎界面" << endl;
-                filename = "./root/welcome.html"; //登录进入欢迎界面
+                if (m_redis->getUserpasswd(m_map["username"]) == "root")
+                    filename = "./root/welcomeroot.html"; //登录进入欢迎界面
+                else
+                    filename = "./root/welcome.html"; //登录进入欢迎界面
             }
             else
             {
@@ -204,6 +214,18 @@ void http_conn::do_request()
             m_redis->setUserpasswd(m_map["username"], m_map["passwd"]);
             //cout << "set:" << m_map["username"]<<"passwd:  "<<m_map["passwd"] << endl;
             filename = "./root/regester.html"; //注册后进入初始登录界面
+        }
+        else if (m_map["url"] == "/welcome.html") //如果来自登录后界面
+        {
+            m_redis->vote(m_map["votename"]);
+            filename = "./root/welcome.html"; //进入初始登录界面
+        }
+        else if (m_map["url"] == "/getvote") //如果主页要请求投票
+        {
+            //读取redis
+            postmsg = m_redis->getvoteboard();
+            //cout << postmsg << endl;
+            return false;
         }
         else
         {
@@ -222,7 +244,7 @@ void http_conn::do_request()
     {
         filename = "./root/error.html";
     }
-
+    return true;
     //cout << "return filename : " << filename << endl;
 }
 void http_conn::unmap()
@@ -236,15 +258,39 @@ void http_conn::unmap()
 bool http_conn::process_write(HTTP_CODE ret)
 {
 
-    do_request();
+    if (do_request())
+    {
+        //filename
+        int fd = open(filename.c_str(), O_RDONLY);
 
-    int fd = open(filename.c_str(), O_RDONLY);
+        stat(filename.c_str(), &m_file_stat);
+        file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+        m_iovec[1].iov_base = file_addr;
+        m_iovec[1].iov_len = m_file_stat.st_size;
+        close(fd); //居然忘记关闭描述符了
+    }
+    else
+    {
 
-    stat(filename.c_str(), &m_file_stat);
-    file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    m_iovec[1].iov_base = file_addr;
-    m_iovec[1].iov_len = m_file_stat.st_size;
-    close(fd);//居然忘记关闭描述符了
+        //postmsg
+        
+        strcpy(post_temp, postmsg.c_str());
+        //cout <<postmsg.size()<<" :" << post_temp << endl;
+        m_iovec[1].iov_base = post_temp;
+        m_iovec[1].iov_len = (postmsg.size()) * sizeof(char);
+        
+        //filename
+        /*
+        int fd = open(filename.c_str(), O_RDONLY);
+
+        stat(filename.c_str(), &m_file_stat);
+        file_addr = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+        m_iovec[1].iov_base = file_addr;
+        m_iovec[1].iov_len = m_file_stat.st_size;
+        cout << file_addr << endl;
+        close(fd); //居然忘记关闭描述符了
+        */
+    }
 
     return true;
 }

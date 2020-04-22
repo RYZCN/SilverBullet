@@ -16,7 +16,6 @@ private:
 
 private:
     string getReply(string m_command);
-
     redis_clt();
 
 public:
@@ -29,6 +28,14 @@ public:
     {
         return getReply("get " + username);
     }
+    void vote(string votename)
+    {
+        getReply("ZINCRBY company 1 " + votename);
+        //zrange company 0 -1 withscores
+    }
+    string getvoteboard();
+    void board_exist();
+
     static redis_clt *getinstance();
 };
 
