@@ -51,6 +51,7 @@
 * 欢迎界面
     + 按钮生成post请求进行投票
     ![avater](./root/test.png)
+    ![another](https://github.com/RYZCN/SilverBullet/tree/cshil/root/test.png)
 
 
 ### 压力测试
