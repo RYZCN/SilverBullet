@@ -29,6 +29,7 @@
 ### 数据库
 * 使用redis键值对来储存用户名和密码
 * 单例模式创建redis客户端类，用于用户信息查询
+* sorted-set 记录投票
 * 需要拥有redis环境
     + 安装redis `sudo apt-get install redis-server`
     + 安装C++的hiredis库  `sudo apt-get install libhiredis-dev`
@@ -42,7 +43,15 @@
 * 主函数循环中根据标志位的变化来执行具体的操作
 
 ### 网页页面
-* 具有登录、注册、登录错误、登录成功、帮助五个页面
+* 具有登录、注册、错误、欢迎、帮助五个页面
+* 登录页面显示投票现况，登录后可以投票
+* 登录页面
+    + ajax实现轮询，获得sorted-set最新投票数据
+    + echarts实现柱状图
+* 欢迎界面
+    + 按钮生成post请求进行投票
+    ![avater](./root/test.png)
+
 
 ### 压力测试
 * 采用webbench进行压力测试
