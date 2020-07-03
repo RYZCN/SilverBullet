@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "thread": "cpp",
+        "functional": "cpp",
+        "ratio": "cpp",
+        "condition_variable": "cpp"
+    }
+}
