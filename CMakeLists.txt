@@ -4,6 +4,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
+set(MY_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE})
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -20,7 +22,15 @@ endif()
 
 
 add_executable(SilverBullet)
-target_sources(SilverBullet PRIVATE "main.cpp")
+target_sources(SilverBullet PRIVATE "main.cc")
+
+add_library(util STATIC)
+target_sources(util PRIVATE 
+"util/threadpool.cc"
+)
+target_include_directories(util INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/util)
+add_subdirectory(util)
+#target_include_directories(util PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../util)
 target_compile_definitions(SilverBullet PRIVATE std_cxx_14)  
 target_compile_options(SilverBullet PRIVATE
   -g

@@ -8,7 +8,7 @@
             "name": "(gdb) 启动",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/bin/SilverBullet",
+            "program": "${workspaceFolder}/build/Debug/util/threadpool_test",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
