@@ -2,29 +2,41 @@
 #include "gtest/gtest.h"
 namespace SB
 {
-
-    TEST(ThreadPoolTest, Simple)
+    namespace util
     {
-        int num = 5;
+        /**
+     * @brief Construct a new TEST object
+     * 
+     */
+        int num = 1000;
         int inc = 0;
         std::vector<int> record(num, 0);
-        ThreadPool pool("test", 5, 1000);
-        auto func = [&record](const int inc) { ASSERT_EQ(record[inc], 0);record[inc]=1; };
-        while (inc < num)
+        void func(int index)
         {
-            pool.run(std::bind(func, inc));
-            inc++;
+            record[index]++;
         }
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        for (int i = 0; i < record.size(); ++i)
+        TEST(ThreadPoolTest, Simple)
         {
-            ASSERT_EQ(record[i], 1) << i;
+
+            {
+                ThreadPool pool("test", 5, 1000);
+                pool.start();
+                while (inc < num)
+                {
+                    Task c = std::bind(func, inc);
+                    pool.put(c);
+                    inc++;
+                }
+            }
+            for (int i = 0; i < record.size(); ++i)
+            {
+                ASSERT_EQ(record[i], 1) << i;
+            }
         }
-        
-    }
+    } // namespace util
 
 } // namespace SB
-
+using namespace SB::util;
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
