@@ -52,6 +52,24 @@
         "sstream": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "cstring": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "complex": "cpp",
+        "numeric": "cpp",
+        "random": "cpp",
+        "cfenv": "cpp",
+        "cinttypes": "cpp",
+        "typeindex": "cpp",
+        "csetjmp": "cpp",
+        "csignal": "cpp",
+        "codecvt": "cpp",
+        "cuchar": "cpp",
+        "regex": "cpp",
+        "future": "cpp",
+        "scoped_allocator": "cpp",
+        "shared_mutex": "cpp",
+        "valarray": "cpp"
     }
 }

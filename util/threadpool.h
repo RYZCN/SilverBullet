@@ -1,13 +1,13 @@
-#ifndef SILVERBULLET_THREAD_H_
-#define SILVERBULLET_THREAD_H_
+#ifndef SILVERBULLET_UTIL_THREAD_H_
+#define SILVERBULLET_UTIL_THREAD_H_
+#include <condition_variable>
+#include <deque>
+#include <functional>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
-#include <memory>
-#include <mutex>
-#include <functional>
-#include <deque>
-#include <condition_variable>
 namespace SB
 {
     namespace util

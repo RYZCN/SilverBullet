@@ -1,9 +1,9 @@
-#ifndef SILVERBULLET_LOGFILE_H_
-#define SILVERBULLET_LOGFILE_H_
-#include <string>
-#include <mutex>
-#include <memory>
+#ifndef SILVERBULLET_BASE_LOGFILE_H_
+#define SILVERBULLET_BASE_LOGFILE_H_
 #include "noncopyable.h"
+#include <memory>
+#include <mutex>
+#include <string>
 
 class AppendFile;
 class LogFile : noncopyable

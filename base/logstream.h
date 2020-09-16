@@ -1,11 +1,11 @@
-#ifndef SILVERBULLET_LOGSTREAM_H_
-#define SILVERBULLET_LOGSTREAM_H_
+#ifndef SILVERBULLET_BASE_LOGSTREAM_H_
+#define SILVERBULLET_BASE_LOGSTREAM_H_
+#include "noncopyable.h"
 #include <assert.h>
 #include <string.h>
 #include <string>
-#include "noncopyable.h"
 
-class AsyncLogging;
+class AsyncLog;
 const int SBUFFSIZE = 4096;
 const int LBUFFSIZE = 4096 * 1000;
 
@@ -43,43 +43,43 @@ private:
     char *cur_;
 };
 
-class Stream : noncopyable
+class LogStream : noncopyable
 {
 public:
     typedef FixedBuffer<SBUFFSIZE> Buffer;
 
-    Stream &operator<<(bool v)
+    LogStream &operator<<(bool v)
     {
         buffer_.append(v ? "1" : "0", 1);
         return *this;
     }
 
-    Stream &operator<<(short);
-    Stream &operator<<(unsigned short);
-    Stream &operator<<(int);
-    Stream &operator<<(unsigned int);
-    Stream &operator<<(long);
-    Stream &operator<<(unsigned long);
-    Stream &operator<<(long long);
-    Stream &operator<<(unsigned long long);
+    LogStream &operator<<(short);
+    LogStream &operator<<(unsigned short);
+    LogStream &operator<<(int);
+    LogStream &operator<<(unsigned int);
+    LogStream &operator<<(long);
+    LogStream &operator<<(unsigned long);
+    LogStream &operator<<(long long);
+    LogStream &operator<<(unsigned long long);
 
-    Stream &operator<<(const void *);
+    LogStream &operator<<(const void *);
 
-    Stream &operator<<(float v)
+    LogStream &operator<<(float v)
     {
         *this << static_cast<double>(v);
         return *this;
     }
-    Stream &operator<<(double);
-    Stream &operator<<(long double);
+    LogStream &operator<<(double);
+    LogStream &operator<<(long double);
 
-    Stream &operator<<(char v)
+    LogStream &operator<<(char v)
     {
         buffer_.append(&v, 1);
         return *this;
     }
 
-    Stream &operator<<(const char *str)
+    LogStream &operator<<(const char *str)
     {
         if (str)
             buffer_.append(str, strlen(str));
@@ -88,12 +88,12 @@ public:
         return *this;
     }
 
-    Stream &operator<<(const unsigned char *str)
+    LogStream &operator<<(const unsigned char *str)
     {
         return operator<<(reinterpret_cast<const char *>(str));
     }
 
-    Stream &operator<<(const std::string &v)
+    LogStream &operator<<(const std::string &v)
     {
         buffer_.append(v.c_str(), v.size());
         return *this;
@@ -110,7 +110,6 @@ private:
     void formatInteger(T);
 
     Buffer buffer_;
-
     static const int MAX_NUM_LENGTH = 32;
 };
 

@@ -1,7 +1,7 @@
+#include "logfile.h"
 #include <assert.h>
 #include <stdio.h>
 #include <time.h>
-#include "logfile.h"
 class AppendFile : noncopyable
 {
 public:
@@ -53,13 +53,13 @@ LogFile::~LogFile() {}
 
 void LogFile::append(const char *logline, int len)
 {
-    lock_guard lock(mutex_);
+    lock_guard<mutex> lock(mutex_);
     append_unlocked(logline, len);
 }
 
 void LogFile::flush()
 {
-    lock_guard lock(mutex_);
+    lock_guard<mutex> lock(mutex_);
     file_->flush();
 }
 void LogFile::append_unlocked(const char *line, int len)

@@ -1,0 +1,124 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "net/libnet.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"target_include_directories",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"net/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 3,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 2,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "/home/ryz/git_pro/SilverBullet/net"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/ryz/git_pro/SilverBullet/util"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/ryz/git_pro/SilverBullet/base"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "base::@4506b02e7a4fef989908"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "util::@5865449b717dd869d2cd"
+		}
+	],
+	"id" : "net::@9c2d6179807f9007d92d",
+	"name" : "net",
+	"nameOnDisk" : "libnet.a",
+	"paths" : 
+	{
+		"build" : "net",
+		"source" : "net"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "net/webserver.cc",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

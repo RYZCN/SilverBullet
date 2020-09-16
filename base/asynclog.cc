@@ -1,16 +1,15 @@
-
 #include "asynclog.h"
+#include "logfile.h"
 #include <assert.h>
+#include <functional>
 #include <stdio.h>
 #include <unistd.h>
-#include <functional>
-#include "logfile.h"
 using namespace std;
-AsyncLogging::AsyncLogging(std::string logFileName_, int flushInterval)
-    : flushInterval_(flushInterval),
+AsyncLog::AsyncLog(std::string logFileName_, int flushInterval)
+    : flush_interval_(flushInterval),
       is_running_(false),
       name_(logFileName_),
-      thread_(),
+      back_thread_(),
       curr_buf_(new Buffer()),
       next_buf_(new Buffer()),
       buffers_(),
@@ -21,14 +20,14 @@ AsyncLogging::AsyncLogging(std::string logFileName_, int flushInterval)
     next_buf_->init_zero();
     buffers_.reserve(16);
 }
-AsyncLogging::~AsyncLogging()
+AsyncLog::~AsyncLog()
 {
     if (is_running_)
         stop();
 }
-void AsyncLogging::append(const char *logline, int len)
+void AsyncLog::append(const char *logline, int len)
 {
-    unique_lock lock(mutex_);
+    unique_lock<mutex> lock(mutex_); //单线程
     if (curr_buf_->rest() > len)
         curr_buf_->append(logline, len);
     else
@@ -40,92 +39,90 @@ void AsyncLogging::append(const char *logline, int len)
         else
             curr_buf_.reset(new Buffer);
         curr_buf_->append(logline, len);
-        cond_.notify_one();
+        buf_to_write_cond_.notify_one();
     }
 }
 
-void AsyncLogging::threadFunc()
+void AsyncLog::back_up_func()
 {
     assert(is_running_ == true);
     latch_.count_down();
     LogFile output(name_);
-
     BufferPtr newBuffer1(new Buffer);
     BufferPtr newBuffer2(new Buffer);
     newBuffer1->init_zero();
     newBuffer2->init_zero();
 
-    BufferVector buffersToWrite;
-    buffersToWrite.reserve(16);
+    BufferVector buf_to_wirte;
+    buf_to_wirte.reserve(16);
     while (is_running_)
     {
         assert(newBuffer1 && newBuffer1->length() == 0);
         assert(newBuffer2 && newBuffer2->length() == 0);
-        assert(buffersToWrite.empty());
+        assert(buf_to_wirte.empty());
 
         {
-            unique_lock lock(mutex_);
+            unique_lock<mutex> lock(mutex_);
             if (buffers_.empty())
             {
-                cond_.wait_for(lock, chrono::duration<int>(flushInterval_));
+                Seconds wait_time(flush_interval_);
+                buf_to_write_cond_.wait_for(lock, wait_time);
             }
             buffers_.push_back(curr_buf_);
             curr_buf_.reset();
 
             curr_buf_ = std::move(newBuffer1);
-            buffersToWrite.swap(buffers_);
+            buf_to_wirte.swap(buffers_);
             if (!next_buf_)
             {
                 next_buf_ = std::move(newBuffer2);
             }
         }
 
-        assert(!buffersToWrite.empty());
-
-        if (buffersToWrite.size() > 25)
+        assert(!buf_to_wirte.empty());
+        if (buf_to_wirte.size() > 25)
         {
-            buffersToWrite.erase(buffersToWrite.begin() + 2, buffersToWrite.end());
+            buf_to_wirte.erase(buf_to_wirte.begin() + 2, buf_to_wirte.end());
+        }
+        for (size_t i = 0; i < buf_to_wirte.size(); ++i)
+        {
+            output.append(buf_to_wirte[i]->data(), buf_to_wirte[i]->length());
         }
 
-        for (size_t i = 0; i < buffersToWrite.size(); ++i)
+        if (buf_to_wirte.size() > 2)
         {
-            output.append(buffersToWrite[i]->data(), buffersToWrite[i]->length());
-        }
-
-        if (buffersToWrite.size() > 2)
-        {
-            buffersToWrite.resize(2);
+            buf_to_wirte.resize(2);
         }
 
         if (!newBuffer1)
         {
-            assert(!buffersToWrite.empty());
-            newBuffer1 = buffersToWrite.back();
-            buffersToWrite.pop_back();
+            assert(!buf_to_wirte.empty());
+            newBuffer1 = buf_to_wirte.back();
+            buf_to_wirte.pop_back();
             newBuffer1->reset();
         }
 
         if (!newBuffer2)
         {
-            assert(!buffersToWrite.empty());
-            newBuffer2 = buffersToWrite.back();
-            buffersToWrite.pop_back();
+            assert(!buf_to_wirte.empty());
+            newBuffer2 = buf_to_wirte.back();
+            buf_to_wirte.pop_back();
             newBuffer2->reset();
         }
-        buffersToWrite.clear();
+        buf_to_wirte.clear();
         output.flush();
     }
     output.flush();
 }
-void AsyncLogging::start()
+void AsyncLog::start()
 {
     is_running_ = true;
-    thread_ = thread(std::bind(&AsyncLogging::threadFunc, this));
+    back_thread_ = thread(std::bind(&AsyncLog::back_up_func, this));
     latch_.wait();
 }
-void AsyncLogging::stop()
+void AsyncLog::stop()
 {
     is_running_ = false;
-    cond_.notify_one();
-    thread_.join();
+    buf_to_write_cond_.notify_one();
+    back_thread_.join();
 }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(SilverBullet C CXX)
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_BUILD_TYPE "Relese")
 endif()
 
 set(MY_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE})
@@ -20,17 +20,17 @@ if(NOT googletest_POPULATED)
     add_subdirectory(${googletest_SOURCE_DIR})
 endif()
 
+add_subdirectory(base)
+
+add_subdirectory(util)
+
+add_subdirectory(net)
 
 add_executable(SilverBullet)
 target_sources(SilverBullet PRIVATE "main.cc")
+target_link_libraries(SilverBullet PRIVATE base util net)
+link_libraries(pthread)
 
-add_library(util STATIC)
-target_sources(util PRIVATE 
-"util/threadpool.cc"
-)
-target_include_directories(util INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/util)
-add_subdirectory(util)
-#target_include_directories(util PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../util)
 target_compile_definitions(SilverBullet PRIVATE std_cxx_14)  
 target_compile_options(SilverBullet PRIVATE
   -g

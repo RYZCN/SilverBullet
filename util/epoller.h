@@ -1,41 +1,48 @@
-#ifndef SILVERBULLET_EPOLLER_H_
-#define SILVERBULLET_EPOLLER_H_
-#include <string>
-#include <thread>
-#include <vector>
+#ifndef SILVERBULLET_UTIL_EPOLLER_H_
+#define SILVERBULLET_UTIL_EPOLLER_H_
+#include "channel.h"
+#include "httpdata.h"
+#include "noncopyable.h"
+#include "timer.h"
+#include <condition_variable>
+#include <deque>
+#include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
-#include <functional>
-#include <deque>
+#include <string>
 #include <sys/epoll.h>
-#include <condition_variable>
-#include <map>
-#include <base/noncopyable.h>
-#include "eventloop.h"
-#include "channel.h"
+#include <thread>
+#include <vector>
 namespace SB
 {
     namespace util
     {
-
-        using CallBack = std::function<void()>;
-        using ChannelSP = std::shared_ptr<Channel>;
-        using EventMap = std::map<int, ChannelSP>;
-        /**
-         * @brief Epoller类 处理事件 对应一个内核epoll
-         * 
-         */
-
-        class Epoller : public noncopyable
+        class Channel;
+        class HttpMessage;
+        class Epoller
         {
         public:
-            explicit Epoller(EventLoop *owner);
+            typedef std::shared_ptr<Channel> SP_Channel;
+            Epoller();
             ~Epoller();
+            void epoll_add(SP_Channel request, int timeout);
+            void epoll_mod(SP_Channel request, int timeout);
+            void epoll_del(SP_Channel request);
+            std::vector<std::shared_ptr<Channel>> poll();
+            std::vector<std::shared_ptr<Channel>> get_return_events(int events_num);
+
+            int get_fd() { return epollFd_; }
+            void handle_expired();
 
         private:
-            EventMap events_;
-            EventLoop *owner_;
-            int fd_;
+            void add_timer(std::shared_ptr<Channel> request_data, int timeout);
+            static const int MAXFDS = 100000;
+            int epollFd_;
+            std::vector<epoll_event> events_;
+            std::shared_ptr<Channel> fd2chan_[MAXFDS];
+            std::shared_ptr<HttpMessage> fd2http_[MAXFDS];
+            TimerManager timerManager_; //每个Epoller一个定时器管理单元
         };
     } // namespace util
 } // namespace SB

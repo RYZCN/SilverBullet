@@ -1,5 +1,5 @@
 set -x
-BUILD_TYPE=${BUILD_TYPE:-Debug}
+BUILD_TYPE=${BUILD_TYPE:-Relese}
 BUILD_DIR=${BUILD_DIR:-./build}
 mkdir -p $BUILD_DIR/$BUILD_TYPE/bin $BUILD_DIR/$BUILD_TYPE/lib
 ln -sf $BUILD_DIR/$BUILD_TYPE/compile_commands.json

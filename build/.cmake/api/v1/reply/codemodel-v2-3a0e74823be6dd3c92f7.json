@@ -1,0 +1,288 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						4,
+						5,
+						7
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "build/_deps/googletest-src",
+					"childIndexes" : 
+					[
+						2
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.8.8"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "build/_deps/googletest-src"
+				},
+				{
+					"build" : "build/_deps/googletest-src/googlemock",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6.4"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 2,
+					"source" : "build/_deps/googletest-src/googlemock",
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				},
+				{
+					"build" : "build/_deps/googletest-src/googletest",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6.4"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 3,
+					"source" : "build/_deps/googletest-src/googletest",
+					"targetIndexes" : 
+					[
+						4,
+						5
+					]
+				},
+				{
+					"build" : "base",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "base",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "util",
+					"childIndexes" : 
+					[
+						6
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "util",
+					"targetIndexes" : 
+					[
+						8
+					]
+				},
+				{
+					"build" : "util/test",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "util/test",
+					"targetIndexes" : 
+					[
+						7
+					]
+				},
+				{
+					"build" : "net",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "net",
+					"targetIndexes" : 
+					[
+						6
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						4,
+						5,
+						6,
+						7
+					],
+					"name" : "SilverBullet",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						6,
+						7,
+						8
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2
+					],
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "googletest-distribution",
+					"parentIndex" : 0
+				},
+				{
+					"childIndexes" : 
+					[
+						3
+					],
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "gmock",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "gtest",
+					"parentIndex" : 2,
+					"targetIndexes" : 
+					[
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "SilverBullet::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SilverBullet-Debug-b9fd90454084d93c8200.json",
+					"name" : "SilverBullet",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "base::@4506b02e7a4fef989908",
+					"jsonFile" : "target-base-Debug-0d72b77535b8a5937249.json",
+					"name" : "base",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "gmock::@eedd0be5a0d53e750fb6",
+					"jsonFile" : "target-gmock-Debug-9714f2f763429e4eee64.json",
+					"name" : "gmock",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "gmock_main::@eedd0be5a0d53e750fb6",
+					"jsonFile" : "target-gmock_main-Debug-b09bdd13c460d64e8a6b.json",
+					"name" : "gmock_main",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "gtest::@03b4549fe4063facc5e2",
+					"jsonFile" : "target-gtest-Debug-b91b929ab36c2a92f687.json",
+					"name" : "gtest",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "gtest_main::@03b4549fe4063facc5e2",
+					"jsonFile" : "target-gtest_main-Debug-f5e372999ade7666538d.json",
+					"name" : "gtest_main",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "net::@9c2d6179807f9007d92d",
+					"jsonFile" : "target-net-Debug-2137b866e09fbcb97bba.json",
+					"name" : "net",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "threadpool_test::@b9a82ea53a48e049ac48",
+					"jsonFile" : "target-threadpool_test-Debug-395df853be89cc5bbd51.json",
+					"name" : "threadpool_test",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "util::@5865449b717dd869d2cd",
+					"jsonFile" : "target-util-Debug-11ff3e506923beb15505.json",
+					"name" : "util",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/ryz/git_pro/SilverBullet/build",
+		"source" : "/home/ryz/git_pro/SilverBullet"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 1
+	}
+}

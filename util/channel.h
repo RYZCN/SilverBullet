@@ -1,84 +1,126 @@
-#ifndef SILVERBULLET_CHANNEL_H_
-#define SILVERBULLET_CHANNEL_H_
-#include <string>
-#include <thread>
-#include <vector>
+#ifndef SILVERBULLET_UTIL_CHANNEL_H_
+#define SILVERBULLET_UTIL_CHANNEL_H_
+
+#include "noncopyable.h"
+#include "timer.h"
+#include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
-#include <functional>
-#include <condition_variable>
-#include <base/noncopyable.h>
-#include "eventloop.h"
+#include <string>
 #include <sys/epoll.h>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
-class EventLoop;
 namespace SB
 {
     namespace util
     {
-        using CallBack = std::function<void()>;
-        /**
-         * @brief 维护事件的处理逻辑
-         * 
-         */
+
+        class EventLoop;
+        class HttpMessage;
+
         class Channel
         {
-        public:
-            Channel(EventLoop *loop, int fd);
-            ~Channel();
-            void handle();
-            int fd() const
-            {
-                return fd_;
-            }
-            int event() const
-            {
-                return event_;
-            }
-            int revent() const
-            {
-                return revent_;
-            }
-            void set_event(const int32_t eve)
-            {
-                event_ = eve;
-            }
-            void set_revent(const int32_t eve)
-            {
-                revent_ = eve;
-            }
-            void set_read_handle(CallBack cb)
-            {
-                read_handle_ = std::move(cb);
-            }
-            void set_write_handle(CallBack cb)
-            {
-                worite_handle_ = std::move(cb);
-            }
-            void set_close_handle(CallBack cb)
-            {
-                close_handle_ = std::move(cb);
-            }
-            void set_error_handle(CallBack cb)
-            {
-                error_handle_ = std::move(cb);
-            }
-            void read();
-            void wirte();
-
         private:
-            CallBack read_handle_;
-            CallBack worite_handle_;
-            CallBack error_handle_;
-            CallBack close_handle_;
+            typedef std::function<void()> CallBack;
             EventLoop *loop_;
             int fd_;
-            const int fd_;
-            uint32_t event_;
-            uint32_t revent_;
-            bool is_tied_;
-            std::weak_ptr<void> owner_; //保活指针，void* 抽象
+            __uint32_t events_;
+            __uint32_t revents_;
+            __uint32_t lastEvents_;
+
+            //owner
+            std::weak_ptr<HttpMessage> holder_;
+
+        private:
+            int parse_URI();
+            int parse_Headers();
+            int analys_request();
+
+            CallBack readHandler_;
+            CallBack writeHandler_;
+            CallBack errorHandler_;
+            CallBack connHandler_;
+
+        public:
+            Channel(EventLoop *loop);
+            Channel(EventLoop *loop, int fd);
+            ~Channel();
+            int get_fd();
+            void set_fd(int fd);
+
+            void set_holder(std::shared_ptr<HttpMessage> holder) { holder_ = holder; }
+            std::shared_ptr<HttpMessage> get_holder()
+            {
+                std::shared_ptr<HttpMessage> ret(holder_.lock());
+                return ret;
+            }
+
+            void set_read_handler(CallBack &&readHandler)
+            {
+                readHandler_ = readHandler;
+            }
+            void set_write_handler(CallBack &&writeHandler)
+            {
+                writeHandler_ = writeHandler;
+            }
+            void set_err_handler(CallBack &&errorHandler)
+            {
+                errorHandler_ = errorHandler;
+            }
+            void set_env_handler(CallBack &&connHandler)
+            {
+                connHandler_ = connHandler;
+            }
+
+            void handle_events()
+            {
+                events_ = 0;
+                if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN))
+                {
+                    events_ = 0;
+                    return;
+                }
+                if (revents_ & EPOLLERR)
+                {
+                    if (errorHandler_)
+                        errorHandler_();
+                    events_ = 0;
+                    return;
+                }
+                if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
+                {
+                    handle_read();
+                }
+                if (revents_ & EPOLLOUT)
+                {
+                    handle_wirte();
+                }
+                handle_event_process_env();
+            }
+            void handle_read();
+            void handle_wirte();
+            void handle_error(int fd, int err_num, std::string short_msg);
+            void handle_event_process_env();
+
+            void set_revents(__uint32_t ev) { revents_ = ev; }
+
+            void set_events(__uint32_t ev) { events_ = ev; }
+            __uint32_t &get_events() { return events_; }
+
+            bool update_event_and_judge_is_same()
+            {
+                bool ret = (lastEvents_ == events_);
+                lastEvents_ = events_;
+                return ret;
+            }
+
+            __uint32_t get_last_events() { return lastEvents_; }
         };
+
+        typedef std::shared_ptr<Channel> SP_Channel;
     } // namespace util
 } // namespace SB
 

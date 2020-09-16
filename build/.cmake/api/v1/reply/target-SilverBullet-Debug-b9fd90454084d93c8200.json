@@ -1,0 +1,248 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "SilverBullet"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"target_compile_options",
+			"target_compile_definitions",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 29,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 35,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 34,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 30,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -O0"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-DCHECK_PTHREAD_RETURN_VALUE"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-D_FILE_OFFSET_BITS=64"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wall"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wextra"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Werror"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wconversion"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wno-unused-parameter"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wold-style-cast"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Woverloaded-virtual"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wpointer-arith"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wshadow"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-Wwrite-strings"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-march=native"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-std=c++11"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-rdynamic"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 4,
+					"define" : "std_cxx_14"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 2,
+					"path" : "/home/ryz/git_pro/SilverBullet/base"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/ryz/git_pro/SilverBullet/util"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/ryz/git_pro/SilverBullet/net"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "base::@4506b02e7a4fef989908"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "util::@5865449b717dd869d2cd"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "net::@9c2d6179807f9007d92d"
+		}
+	],
+	"id" : "SilverBullet::@6890427a1f51a3e7e1df",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g -O0",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/ryz/git_pro/SilverBullet/build/base",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "util/libutil.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "net/libnet.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "util/libutil.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "base/libbase.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "SilverBullet",
+	"nameOnDisk" : "SilverBullet",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 5,
+			"compileGroupIndex" : 0,
+			"path" : "main.cc",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

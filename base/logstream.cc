@@ -1,11 +1,11 @@
 
 #include "logstream.h"
+#include <algorithm>
 #include <assert.h>
+#include <limits>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <algorithm>
-#include <limits>
 
 const char digits[] = "9876543210123456789";
 const char *zero = digits + 9;
@@ -38,7 +38,7 @@ template class FixedBuffer<SBUFFSIZE>;
 template class FixedBuffer<LBUFFSIZE>;
 
 template <typename T>
-void Stream::formatInteger(T v)
+void LogStream::formatInteger(T v)
 {
     // buffer容不下最大字符串的话会被直接丢弃
     if (buffer_.rest() >= MAX_NUM_LENGTH)
@@ -48,55 +48,55 @@ void Stream::formatInteger(T v)
     }
 }
 
-Stream &Stream::operator<<(short v)
+LogStream &LogStream::operator<<(short v)
 {
     *this << static_cast<int>(v);
     return *this;
 }
 
-Stream &Stream::operator<<(unsigned short v)
+LogStream &LogStream::operator<<(unsigned short v)
 {
     *this << static_cast<unsigned int>(v);
     return *this;
 }
 
-Stream &Stream::operator<<(int v)
+LogStream &LogStream::operator<<(int v)
 {
     formatInteger(v);
     return *this;
 }
 
-Stream &Stream::operator<<(unsigned int v)
+LogStream &LogStream::operator<<(unsigned int v)
 {
     formatInteger(v);
     return *this;
 }
 
-Stream &Stream::operator<<(long v)
+LogStream &LogStream::operator<<(long v)
 {
     formatInteger(v);
     return *this;
 }
 
-Stream &Stream::operator<<(unsigned long v)
+LogStream &LogStream::operator<<(unsigned long v)
 {
     formatInteger(v);
     return *this;
 }
 
-Stream &Stream::operator<<(long long v)
+LogStream &LogStream::operator<<(long long v)
 {
     formatInteger(v);
     return *this;
 }
 
-Stream &Stream::operator<<(unsigned long long v)
+LogStream &LogStream::operator<<(unsigned long long v)
 {
     formatInteger(v);
     return *this;
 }
 
-Stream &Stream::operator<<(double v)
+LogStream &LogStream::operator<<(double v)
 {
     if (buffer_.rest() >= MAX_NUM_LENGTH)
     {
@@ -106,7 +106,7 @@ Stream &Stream::operator<<(double v)
     return *this;
 }
 
-Stream &Stream::operator<<(long double v)
+LogStream &LogStream::operator<<(long double v)
 {
     if (buffer_.rest() >= MAX_NUM_LENGTH)
     {

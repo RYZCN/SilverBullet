@@ -1,18 +1,15 @@
-// @Author Lin Ya
-// @Email xxbbb@vip.qq.com
+#include "eventloop.h"
+#include "logger.h"
+#include "webserver.h"
 #include <getopt.h>
 #include <string>
-#include "util/eventloop.h"
-#include "net/webserver.h"
-#include "base/log.h"
-
+using namespace SB::util;
+using namespace SB::net;
 int main(int argc, char *argv[])
 {
     int thread_num = 4;
-    int port = 80;
+    int port = 9999;
     std::string logPath = "./WebServer.log";
-
-    // parse args
     int opt;
     const char *str = "t:l:p:";
     while ((opt = getopt(argc, argv, str)) != -1)
@@ -43,11 +40,14 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    Logger::setLogFileName(logPath);
-    EventLoop mainLoop;
-
-    Server myHTTPServer(&mainLoop, threadNum, port);
-    myHTTPServer.start();
-    mainLoop.loop();
+    Logger::set_file_name(logPath);
+// STL库在多线程上应用
+#ifndef _PTHREADS
+    LOG << "_PTHREADS is not defined !";
+#endif
+    EventLoop accept_loop;
+    Server web_server(&accept_loop, thread_num, port);
+    web_server.start();
+    accept_loop.loop();
     return 0;
 }
